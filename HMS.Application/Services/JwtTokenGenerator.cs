@@ -27,12 +27,16 @@ public class JwtTokenGenerator : IJwtTokenGenerator
         var claims = new List<Claim>
         {
             new Claim(JwtRegisteredClaimNames.Sub, applicationUser.Id),
-            new Claim(JwtRegisteredClaimNames.Email, applicationUser.Email),
             new Claim(JwtRegisteredClaimNames.Name, applicationUser.UserName),
-            new Claim(JwtRegisteredClaimNames.PhoneNumber, applicationUser.PhoneNumber),
             new Claim("PersonalNumber", applicationUser.PersonalNumber),
             new Claim("fullname", $"{applicationUser.FirstName} {applicationUser.LastName}")
         };
+        
+        if (!string.IsNullOrEmpty(applicationUser.Email))
+            claims.Add(new Claim(JwtRegisteredClaimNames.Email, applicationUser.Email));
+        
+        if (!string.IsNullOrEmpty(applicationUser.PhoneNumber))
+            claims.Add(new Claim("phone_number", applicationUser.PhoneNumber));
 
         foreach (var role in roles)
             claims.Add(new Claim(ClaimTypes.Role, role));

@@ -54,7 +54,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         
 
         builder.Entity<Reservation>()
-            .HasOne<ApplicationUser>()
+            .HasOne(r => r.Guest)        
             .WithMany(u => u.GuestReservations)
             .HasForeignKey(r => r.GuestId)
             .IsRequired()
