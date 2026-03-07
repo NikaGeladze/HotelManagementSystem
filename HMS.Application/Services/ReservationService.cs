@@ -109,8 +109,8 @@ public class ReservationService : IReservationService
 
             var hasOverlap = room.ReservationRooms.Any(rr =>
                 rr.ReservationId != reservationId && 
-                rr.Reservation.CheckInDate < dto.CheckOutDate &&
-                rr.Reservation.CheckOutDate > dto.CheckInDate);
+                rr.Reservation.CheckInDate <= dto.CheckOutDate &&
+                rr.Reservation.CheckOutDate >= dto.CheckInDate);
 
             if (hasOverlap)
                 throw new ConflictException($"Room with id {reservationRoom.RoomId} is not available for the selected dates.");

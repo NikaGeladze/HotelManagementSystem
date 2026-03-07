@@ -7,4 +7,6 @@ public record HotelSummaryDto(
     string Country,
     string City,
     string Address,
-    int RoomCount);
+    int RoomCount,
+    int ManagerCount
+    );

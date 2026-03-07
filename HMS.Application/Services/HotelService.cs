@@ -69,7 +69,8 @@ public class HotelService : IHotelService
         var hotel = await _hotelRepository.GetAsync(
             h => h.Id == hotelId,
             includes: q => q
-                .Include(h => h.Rooms),
+                .Include(h => h.Rooms)
+                .Include(h => h.Managers),
             tracking: false)
             ?? throw new NotFoundException($"Hotel with id {hotelId} not found.");
 
@@ -85,7 +86,7 @@ public class HotelService : IHotelService
                 (filter.Rating == null || h.Rating == filter.Rating),
             pageNumber: filter.PageNumber,
             pageSize: filter.PageSize,
-            includes: q => q.Include(h => h.Rooms),
+            includes: q => q.Include(h => h.Rooms).Include(h=> h.Managers),
             tracking: false);
 
         return _mapper.Map<List<HotelSummaryDto>>(hotels);

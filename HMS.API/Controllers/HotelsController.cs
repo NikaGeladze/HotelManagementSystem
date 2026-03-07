@@ -47,6 +47,7 @@ public class HotelsController : ControllerBase
     }
 
     [HttpGet("{hotelId:guid}")]
+    [Authorize(Roles = "Admin,Manager,Guest")]
     public async Task<IActionResult> GetById(Guid hotelId)
     {
         var hotel = await _hotelService.GetByIdAsync(hotelId);
@@ -74,7 +75,7 @@ public class HotelsController : ControllerBase
     }
 
     [HttpPut("{hotelId:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Manager")]
     public async Task<IActionResult> Update(Guid hotelId, [FromBody] UpdateHotelDto dto)
     {
         await _hotelService.UpdateAsync(hotelId, dto);
@@ -174,10 +175,10 @@ public class HotelsController : ControllerBase
     // ── Reservations ──────────────────────────────────────────
 
     [HttpPost("{hotelId:guid}/reservations")]
-    [Authorize(Roles = "Guest")]
+    [Authorize(Roles = "Guest,Manager,Admin")]
     public async Task<IActionResult> CreateReservation(Guid hotelId, [FromBody] CreateReservationDto dto)
     {
-        var guestId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        string guestId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var id = await _reservationService.CreateAsync(guestId, hotelId, dto);
         return StatusCode(201, new CommonResponse<Guid>
         {

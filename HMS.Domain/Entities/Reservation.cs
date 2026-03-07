@@ -15,9 +15,9 @@ public class Reservation
     [Required]
     public DateOnly CheckOutDate { get; set; }
     
-    [ForeignKey(nameof(Guest))]
     public string GuestId { get; set; }
+
     public ApplicationUser Guest { get; set; }
-    
+
     public ICollection<ReservationRoom> ReservationRooms { get; set; }
 }

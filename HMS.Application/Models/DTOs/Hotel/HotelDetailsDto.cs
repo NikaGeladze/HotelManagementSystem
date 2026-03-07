@@ -1,3 +1,4 @@
+using HMS.Application.Models.DTOs.Auth;
 using HMS.Application.Models.DTOs.Room;
 
 namespace HMS.Application.Models.DTOs.Hotel;
@@ -9,4 +10,6 @@ public record HotelDetailDto(
     string Country,
     string City,
     string Address,
-    List<RoomResponseDto> Rooms);
+    List<RoomResponseDto> Rooms,
+    List<ManagerResponseDto> Managers
+    );

@@ -29,6 +29,8 @@ public class RoomService : IRoomService
         var hotelExists = await _hotelRepository.ExistsAsync(h => h.Id == hotelId);
         if (!hotelExists)
             throw new NotFoundException($"Hotel with id {hotelId} not found.");
+        if (dto.Price <= 0)
+            throw new ArgumentException("Room price is not positive!");
 
         var room = _mapper.Map<Room>(dto);
         room.HotelId = hotelId;
@@ -41,6 +43,7 @@ public class RoomService : IRoomService
 
     public async Task UpdateAsync(Guid hotelId, Guid roomId, UpdateRoomDto dto)
     {
+        if (dto.Price <= 0) throw new ArgumentException("Price is not positive!");
         var room = await _roomRepository.GetAsync(
             r => r.Id == roomId && r.HotelId == hotelId)
             ?? throw new NotFoundException($"Room with id {roomId} not found in hotel {hotelId}.");

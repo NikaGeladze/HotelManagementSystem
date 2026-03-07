@@ -1,3 +1,4 @@
+using HMS.Application.Models.DTOs.Auth;
 using HMS.Application.Models.DTOs.Hotel;
 using HMS.Application.Models.DTOs.Reservation;
 using HMS.Application.Models.DTOs.Room;
@@ -11,9 +12,12 @@ public static class MappingConfig
     public static void RegisterMappings(TypeAdapterConfig config)
     {
         config.NewConfig<Hotel, HotelSummaryDto>()
-            .Map(dest => dest.RoomCount, src => src.Rooms.Count);
+            .Map(dest => dest.RoomCount, src => src.Rooms.Count)
+            .Map(dest => dest.ManagerCount,src => src.Managers.Count);
 
-        config.NewConfig<Hotel, HotelDetailDto>();
+        config.NewConfig<ApplicationUser, ManagerResponseDto>();
+        
+        config.NewConfig<Hotel, HotelDetailDto>().Map(dest => dest.Managers,src => src.Managers);
 
         config.NewConfig<CreateHotelDto, Hotel>();
         config.NewConfig<UpdateHotelDto, Hotel>();
