@@ -2,6 +2,7 @@ using System.Net;
 using System.Security.Claims;
 using HMS.Application.Interfaces.Services;
 using HMS.Application.Models;
+using HMS.Application.Models.DTOs.Auth;
 using HMS.Application.Models.DTOs.Hotel;
 using HMS.Application.Models.DTOs.Reservation;
 using HMS.Application.Models.DTOs.Room;
@@ -34,6 +35,7 @@ public class HotelsController : ControllerBase
     // ── Hotels ────────────────────────────────────────────────
 
     [HttpGet]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetAll([FromQuery] HotelFilterDto filter)
     {
         var hotels = await _hotelService.GetAllAsync(filter);
@@ -65,7 +67,7 @@ public class HotelsController : ControllerBase
     public async Task<IActionResult> Create([FromBody] CreateHotelDto dto)
     {
         var id = await _hotelService.CreateAsync(dto);
-        return StatusCode(201, new CommonResponse<Guid>
+        return StatusCode(StatusCodes.Status201Created, new CommonResponse<Guid>
         {
             IsSuccess = true,
             StatusCode = HttpStatusCode.Created,
@@ -78,7 +80,10 @@ public class HotelsController : ControllerBase
     [Authorize(Roles = "Admin,Manager")]
     public async Task<IActionResult> Update(Guid hotelId, [FromBody] UpdateHotelDto dto)
     {
-        await _hotelService.UpdateAsync(hotelId, dto);
+        var requesterId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var isAdmin = User.IsInRole("Admin");
+
+        await _hotelService.UpdateAsync(hotelId, dto, requesterId, isAdmin);
         return Ok(new CommonResponse<object>
         {
             IsSuccess = true,
@@ -98,6 +103,20 @@ public class HotelsController : ControllerBase
             IsSuccess = true,
             StatusCode = HttpStatusCode.OK,
             Message = "Hotel deleted successfully.",
+            Result = null
+        });
+    }
+    
+    [HttpPut("{hotelId:guid}/managers/{managerId}/assign")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> AssignManager(Guid hotelId, string managerId)
+    {
+        await _authService.AssignManagerToHotelAsync(managerId, hotelId);
+        return Ok(new CommonResponse<object>
+        {
+            IsSuccess = true,
+            StatusCode = HttpStatusCode.OK,
+            Message = "Manager assigned to hotel successfully.",
             Result = null
         });
     }
@@ -134,7 +153,10 @@ public class HotelsController : ControllerBase
     [Authorize(Roles = "Admin,Manager")]
     public async Task<IActionResult> CreateRoom(Guid hotelId, [FromBody] CreateRoomDto dto)
     {
-        var id = await _roomService.CreateAsync(hotelId, dto);
+        var requesterId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var isAdmin = User.IsInRole("Admin");
+        
+        var id = await _roomService.CreateAsync(hotelId, dto,requesterId, isAdmin);
         return StatusCode(201, new CommonResponse<Guid>
         {
             IsSuccess = true,
@@ -148,7 +170,10 @@ public class HotelsController : ControllerBase
     [Authorize(Roles = "Admin,Manager")]
     public async Task<IActionResult> UpdateRoom(Guid hotelId, Guid roomId, [FromBody] UpdateRoomDto dto)
     {
-        await _roomService.UpdateAsync(hotelId, roomId, dto);
+        var requesterId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var isAdmin = User.IsInRole("Admin");
+        
+        await _roomService.UpdateAsync(hotelId, roomId, dto,requesterId, isAdmin);
         return Ok(new CommonResponse<object>
         {
             IsSuccess = true,
@@ -162,7 +187,10 @@ public class HotelsController : ControllerBase
     [Authorize(Roles = "Admin,Manager")]
     public async Task<IActionResult> DeleteRoom(Guid hotelId, Guid roomId)
     {
-        await _roomService.DeleteAsync(hotelId, roomId);
+        var requesterId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var isAdmin = User.IsInRole("Admin");
+        
+        await _roomService.DeleteAsync(hotelId, roomId,requesterId, isAdmin);
         return Ok(new CommonResponse<object>
         {
             IsSuccess = true,

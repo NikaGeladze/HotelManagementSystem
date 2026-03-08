@@ -1,9 +1,13 @@
-using System.ComponentModel.DataAnnotations;
+using HMS.Application.Exceptions;
+using HMS.Application.Interfaces.Repositories;
 using HMS.Application.Interfaces.Services;
 using HMS.Application.Models.DTOs.Auth;
+using HMS.Application.Models.DTOs.Reservation;
 using HMS.Domain.Entities;
+using MapsterMapper;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using ValidationException = System.ComponentModel.DataAnnotations.ValidationException;
 
 namespace HMS.Application.Services;
 
@@ -12,15 +16,22 @@ public class AuthService : IAuthService
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
+    private readonly IHotelRepository _hotelRepository;
+    private readonly IReservationService _reservationService;
 
     public AuthService(
         UserManager<ApplicationUser> userManager,
         RoleManager<IdentityRole> roleManager,
-        IJwtTokenGenerator jwtTokenGenerator)
+        IJwtTokenGenerator jwtTokenGenerator,
+        IHotelRepository hotelRepository,
+        IReservationService reservationService
+        )
     {
         _userManager = userManager;
         _roleManager = roleManager;
         _jwtTokenGenerator = jwtTokenGenerator;
+        _hotelRepository = hotelRepository;
+        _reservationService = reservationService;
     }
     
     public async Task<string> RegisterGuestAsync(RegisterGuestDto dto)
@@ -107,6 +118,139 @@ public class AuthService : IAuthService
 
         var roles = await _userManager.GetRolesAsync(user);
         return _jwtTokenGenerator.GenerateToken(user, roles);
+    }
+
+    public async Task<List<UsersResponseDto>> GetAllUsers(string? role,string? fullName,string? requesterId = null)
+    {
+        var users = await _userManager.Users.ToListAsync();
+        var result = new List<UsersResponseDto>();
+
+        foreach (var user in users)
+        {
+            var roles = await _userManager.GetRolesAsync(user);
+            if (!string.IsNullOrEmpty(role))
+            {
+                roles = roles.Where(r => r.Equals(role)).ToList();
+                if(roles.Count == 0) continue;
+            }
+
+            if (!string.IsNullOrEmpty(fullName))
+            {
+                if(fullName != user.FirstName + " " + user.LastName) continue;
+            }
+
+            if (!string.IsNullOrEmpty(requesterId))
+            {
+                var reservations = await _reservationService.SearchAsync(new ReservationFilterDto()
+                {
+                    HotelId = _userManager.Users.Where(u => u.Id == requesterId).ToList()[0].HotelId,
+                    GuestId = user.Id
+                });
+                if(reservations.Count == 0) continue;
+            }
+
+            result.Add(new UsersResponseDto()
+            {
+                Id = user.Id,
+                FullName = user.FirstName + " " + user.LastName,
+                Roles = roles,
+                PhoneNumber = user.PhoneNumber
+            });
+        }
+
+        if (result.Count == 0) throw new NotFoundException("Users not found");
+
+        return result;
+    }
+
+
+    public async Task AssignManagerToHotelAsync(string managerId, Guid hotelId)
+    {
+        var manager = await _userManager.FindByIdAsync(managerId)
+                      ?? throw new NotFoundException($"Manager with id {managerId} not found.");
+
+        var isManager = await _userManager.IsInRoleAsync(manager, "Manager");
+        if (!isManager)
+            throw new Exceptions.ValidationException(["User is not a manager."]);
+
+        var hotelExists = await _hotelRepository.ExistsAsync(h => h.Id == hotelId);
+        if (!hotelExists)
+            throw new NotFoundException($"Hotel with id {hotelId} not found.");
+
+        manager.HotelId = hotelId;
+
+        var result = await _userManager.UpdateAsync(manager);
+        if (!result.Succeeded)
+            throw new Exceptions.ValidationException(result.Errors.Select(e => e.Description));
+    }
+    
+    public async Task UpdateManagerAsync(string managerId, string requesterId, bool isAdmin, UpdateManagerDto dto)
+    {
+        var manager = await _userManager.FindByIdAsync(managerId)
+                      ?? throw new NotFoundException($"Manager with id {managerId} not found.");
+        
+        if (!isAdmin && managerId != requesterId)
+            throw new UnauthorizedException("You can only update your own account.");
+
+        manager.FirstName = dto.FirstName ?? manager.FirstName;
+        manager.LastName = dto.LastName ?? manager.LastName;
+        manager.PhoneNumber = dto.PhoneNumber ?? manager.PhoneNumber;
+        manager.Email = dto.Email ?? manager.Email;
+        manager.UserName = dto.Email ?? manager.UserName;
+
+        var result = await _userManager.UpdateAsync(manager);
+        if (!result.Succeeded)
+            throw new Exceptions.ValidationException(result.Errors.Select(e => e.Description));
+    }
+
+    public async Task DeleteManagerAsync(string managerId)
+    {
+        var manager = await _userManager.FindByIdAsync(managerId)
+                      ?? throw new NotFoundException($"Manager with id {managerId} not found.");
+
+        var hotelManagerCount = await _userManager.Users
+            .CountAsync(u => u.HotelId == manager.HotelId);
+
+        if (hotelManagerCount <= 1)
+            throw new ConflictException("Cannot delete the only manager of a hotel.");
+
+        var result = await _userManager.DeleteAsync(manager);
+        if (!result.Succeeded)
+            throw new Exceptions.ValidationException(result.Errors.Select(e => e.Description));
+    }
+    
+    public async Task UpdateGuestAsync(string requesterId, UpdateGuestDto dto)
+    {
+        var guest = await _userManager.FindByIdAsync(requesterId)
+                    ?? throw new NotFoundException("Guest not found.");
+
+        guest.FirstName = dto.FirstName ?? guest.FirstName;
+        guest.LastName = dto.LastName ?? guest.LastName;
+        guest.PhoneNumber = dto.PhoneNumber ?? guest.PhoneNumber;
+
+        var result = await _userManager.UpdateAsync(guest);
+        if (!result.Succeeded)
+            throw new Exceptions.ValidationException(result.Errors.Select(e => e.Description));
+    }
+
+    public async Task DeleteGuestAsync(string guestId, string requesterId, bool isAdmin)
+    {
+        if (!isAdmin && guestId != requesterId)
+            throw new UnauthorizedException("You can only delete your own account.");
+
+        var guest = await _userManager.FindByIdAsync(guestId)
+                    ?? throw new NotFoundException($"Guest with id {guestId} not found.");
+        var hasActiveReservations = await _userManager.Users
+            .AnyAsync(u => u.Id == guestId &&
+                           u.GuestReservations.Any(r =>
+                               r.CheckOutDate >= DateOnly.FromDateTime(DateTime.UtcNow)));
+
+        if (hasActiveReservations)
+            throw new ConflictException("Cannot delete guest with active or future reservations.");
+
+        var result = await _userManager.DeleteAsync(guest);
+        if (!result.Succeeded)
+            throw new Exceptions.ValidationException(result.Errors.Select(e => e.Description));
     }
 
     private async Task EnsureRolesExistAsync()

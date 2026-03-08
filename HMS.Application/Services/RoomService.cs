@@ -24,8 +24,11 @@ public class RoomService : IRoomService
         _mapper = mapper;
     }
 
-    public async Task<Guid> CreateAsync(Guid hotelId, CreateRoomDto dto)
+    public async Task<Guid> CreateAsync(Guid hotelId, CreateRoomDto dto,string requesterId = null,bool isAdmin = false)
     {
+        if (!isAdmin)
+            await EnsureManagerOwnsHotelAsync(hotelId, requesterId);
+        
         var hotelExists = await _hotelRepository.ExistsAsync(h => h.Id == hotelId);
         if (!hotelExists)
             throw new NotFoundException($"Hotel with id {hotelId} not found.");
@@ -41,8 +44,11 @@ public class RoomService : IRoomService
         return room.Id;
     }
 
-    public async Task UpdateAsync(Guid hotelId, Guid roomId, UpdateRoomDto dto)
+    public async Task UpdateAsync(Guid hotelId, Guid roomId, UpdateRoomDto dto,string requesterId = null,bool isAdmin = false)
     {
+        if (!isAdmin)
+            await EnsureManagerOwnsHotelAsync(hotelId, requesterId);
+        
         if (dto.Price <= 0) throw new ArgumentException("Price is not positive!");
         var room = await _roomRepository.GetAsync(
             r => r.Id == roomId && r.HotelId == hotelId)
@@ -53,8 +59,11 @@ public class RoomService : IRoomService
         await _roomRepository.SaveAsync();
     }
 
-    public async Task DeleteAsync(Guid hotelId, Guid roomId)
+    public async Task DeleteAsync(Guid hotelId, Guid roomId,string requesterId = null,bool isAdmin = false)
     {
+        if (!isAdmin)
+            await EnsureManagerOwnsHotelAsync(hotelId, requesterId);
+        
         var room = await _roomRepository.GetAsync(
             r => r.Id == roomId && r.HotelId == hotelId,
             includes: q => q
@@ -107,5 +116,14 @@ public class RoomService : IRoomService
             tracking: false);
 
         return _mapper.Map<List<RoomResponseDto>>(rooms);
+    }
+    
+    private async Task EnsureManagerOwnsHotelAsync(Guid hotelId, string requesterId)
+    {
+        var isOwnHotel = await _hotelRepository.ExistsAsync(
+            h => h.Id == hotelId && h.Managers.Any(m => m.Id == requesterId));
+
+        if (!isOwnHotel)
+            throw new UnauthorizedException("You can only manage rooms of your own hotel.");
     }
 }

@@ -7,4 +7,5 @@ public record ReservationResponseDto(
     DateOnly CheckInDate,
     DateOnly CheckOutDate,
     string GuestFullName,
+    string GuestId,
     List<RoomResponseDto> Rooms);

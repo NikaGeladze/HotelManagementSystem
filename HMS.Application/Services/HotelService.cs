@@ -29,11 +29,20 @@ public class HotelService : IHotelService
         return hotel.Id;
     }
 
-    public async Task UpdateAsync(Guid hotelId, UpdateHotelDto dto)
+    public async Task UpdateAsync(Guid hotelId, UpdateHotelDto dto, string? requesterId = null, bool isAdmin = false)
     {
         var hotel = await _hotelRepository.GetAsync(
-            h => h.Id == hotelId)
-            ?? throw new NotFoundException($"Hotel with id {hotelId} not found.");
+                        h => h.Id == hotelId,
+                        includes: q => q.Include(h => h.Managers)
+                        )
+                    ?? throw new NotFoundException($"Hotel with id {hotelId} not found.");
+
+        if (!isAdmin)
+        {
+            var isOwnHotel = hotel.Managers.Any(m => m.Id == requesterId);
+            if (!isOwnHotel)
+                throw new UnauthorizedException("You can only update your own hotel.");
+        }
 
         _mapper.Map(dto, hotel);
         _hotelRepository.Update(hotel);

@@ -78,18 +78,17 @@ public class ReservationService : IReservationService
         return reservation.Id;
     }
 
-    public async Task UpdateAsync(string guestId, Guid reservationId, UpdateReservationDto dto)
+    public async Task UpdateAsync(string requesterId, bool isAdmin, Guid reservationId, UpdateReservationDto dto)
     {
         var reservation = await _reservationRepository.GetAsync(
-            r => r.Id == reservationId,
-            includes: q => q
-                .Include(r => r.ReservationRooms)
-                    .ThenInclude(rr => rr.Reservation))
-            ?? throw new NotFoundException($"Reservation with id {reservationId} not found.");
-        
-        if (reservation.GuestId != guestId)
+                              r => r.Id == reservationId,
+                              includes: q => q.Include(r => r.ReservationRooms))
+                          ?? throw new NotFoundException($"Reservation with id {reservationId} not found.");
+
+        // Admin can update any reservation, Guest only their own
+        if (!isAdmin && reservation.GuestId != requesterId)
             throw new UnauthorizedException("You are not authorized to update this reservation.");
-        
+
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
         if (dto.CheckInDate < today)
@@ -98,19 +97,13 @@ public class ReservationService : IReservationService
         if (dto.CheckOutDate <= dto.CheckInDate)
             throw new ValidationException(["Check-out date must be after check-in date."]);
 
-      
         foreach (var reservationRoom in reservation.ReservationRooms)
         {
-            var room = await _roomRepository.GetAsync(
-                r => r.Id == reservationRoom.RoomId,
-                includes: q => q
-                    .Include(r => r.ReservationRooms)
-                        .ThenInclude(rr => rr.Reservation));
-
-            var hasOverlap = room.ReservationRooms.Any(rr =>
-                rr.ReservationId != reservationId && 
-                rr.Reservation.CheckInDate <= dto.CheckOutDate &&
-                rr.Reservation.CheckOutDate >= dto.CheckInDate);
+            var hasOverlap = await _reservationRepository.ExistsAsync(r =>
+                r.Id != reservationId &&
+                r.ReservationRooms.Any(rr => rr.RoomId == reservationRoom.RoomId) &&
+                r.CheckInDate < dto.CheckOutDate &&
+                r.CheckOutDate > dto.CheckInDate);
 
             if (hasOverlap)
                 throw new ConflictException($"Room with id {reservationRoom.RoomId} is not available for the selected dates.");
@@ -123,13 +116,13 @@ public class ReservationService : IReservationService
         await _reservationRepository.SaveAsync();
     }
 
-    public async Task DeleteAsync(string guestId, Guid reservationId)
+    public async Task DeleteAsync(string requesterId, bool isAdmin, Guid reservationId)
     {
         var reservation = await _reservationRepository.GetAsync(
-            r => r.Id == reservationId)
-            ?? throw new NotFoundException($"Reservation with id {reservationId} not found.");
-        
-        if (reservation.GuestId != guestId)
+                              r => r.Id == reservationId)
+                          ?? throw new NotFoundException($"Reservation with id {reservationId} not found.");
+
+        if (!isAdmin && reservation.GuestId != requesterId)
             throw new UnauthorizedException("You are not authorized to cancel this reservation.");
 
         _reservationRepository.Remove(reservation);
@@ -175,5 +168,15 @@ public class ReservationService : IReservationService
             tracking: false);
 
         return _mapper.Map<List<ReservationResponseDto>>(reservations);
+    }
+    
+    public async Task<Guid> GetManagerHotelIdAsync(string managerId)
+    {
+        var hotel = await _hotelRepository.GetAsync(
+                        h => h.Managers.Any(m => m.Id == managerId),
+                        tracking: false)
+                    ?? throw new NotFoundException("No hotel found for this manager.");
+
+        return hotel.Id;
     }
 }
