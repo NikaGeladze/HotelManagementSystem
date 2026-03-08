@@ -39,6 +39,16 @@ public class AuthService : IAuthService
         await EnsureRolesExistAsync();
         await EnsurePersonalNumberUniqueAsync(dto.PersonalNumber);
         await EnsurePhoneNumberUniqueAsync(dto.PhoneNumber);
+        if (string.IsNullOrEmpty(dto.FirstName.Trim()) || string.IsNullOrEmpty(dto.LastName.Trim()) ||
+            string.IsNullOrEmpty(dto.PhoneNumber.Trim())
+            || string.IsNullOrEmpty(dto.Password.Trim()) || string.IsNullOrEmpty(dto.PersonalNumber.Trim()))
+        {
+            throw new ArgumentException("Parameters were in wrong format!");
+        }
+        if (!dto.PersonalNumber.All(char.IsDigit))
+        {
+            throw new ArgumentException("Personal number must contain only digits.");
+        }
 
         var user = new ApplicationUser
         {
@@ -61,6 +71,21 @@ public class AuthService : IAuthService
         await EnsurePersonalNumberUniqueAsync(dto.PersonalNumber);
         await EnsurePhoneNumberUniqueAsync(dto.PhoneNumber);
         await EnsureEmailUniqueAsync(dto.Email);
+        
+        if (string.IsNullOrEmpty(dto.FirstName.Trim()) || string.IsNullOrEmpty(dto.LastName.Trim()) ||
+            string.IsNullOrEmpty(dto.PhoneNumber.Trim())
+            || string.IsNullOrEmpty(dto.Password.Trim()) || string.IsNullOrEmpty(dto.PersonalNumber.Trim())
+            || string.IsNullOrEmpty(dto.Email.Trim())
+            )
+        {
+            throw new ArgumentException("Parameters were in wrong format!");
+        }
+        
+        if (!dto.PersonalNumber.All(char.IsDigit))
+        {
+            throw new ArgumentException("Personal number must contain only digits.");
+        }
+
 
         var user = new ApplicationUser
         {
@@ -83,6 +108,20 @@ public class AuthService : IAuthService
     {
         await EnsureRolesExistAsync();
         await EnsureEmailUniqueAsync(dto.Email);
+        
+        if (string.IsNullOrEmpty(dto.FirstName.Trim()) || string.IsNullOrEmpty(dto.LastName.Trim()) ||
+            string.IsNullOrEmpty(dto.PhoneNumber.Trim())
+            || string.IsNullOrEmpty(dto.Password.Trim()) || string.IsNullOrEmpty(dto.PersonalNumber.Trim())
+            || string.IsNullOrEmpty(dto.Email.Trim())
+           )
+        {
+            throw new ArgumentException("Parameters were in wrong format!");
+        }
+        
+        if (!dto.PersonalNumber.All(char.IsDigit))
+        {
+            throw new ArgumentException("Personal number must contain only digits.");
+        }
 
         var user = new ApplicationUser
         {
@@ -110,11 +149,11 @@ public class AuthService : IAuthService
                 .FirstOrDefaultAsync(u => u.PhoneNumber == dto.PhoneNumber);
 
         if (user == null)
-            throw new ArgumentException("User not found.");
+            throw new UnauthorizedException("Invalid credentials."); //cant find user
 
         var isPasswordValid = await _userManager.CheckPasswordAsync(user, dto.Password);
         if (!isPasswordValid)
-            throw new ArgumentException("Invalid credentials.");
+            throw new UnauthorizedException("Invalid credentials.");
 
         var roles = await _userManager.GetRolesAsync(user);
         return _jwtTokenGenerator.GenerateToken(user, roles);
@@ -276,7 +315,7 @@ public class AuthService : IAuthService
         var exists = await _userManager.Users
             .AnyAsync(u => u.PersonalNumber == personalNumber);
         if (exists)
-            throw new ArgumentException("Personal number is already in use.");
+            throw new ConflictException("Personal number is already in use.");
     }
 
     private async Task EnsurePhoneNumberUniqueAsync(string phoneNumber)
@@ -284,13 +323,13 @@ public class AuthService : IAuthService
         var exists = await _userManager.Users
             .AnyAsync(u => u.PhoneNumber == phoneNumber);
         if (exists)
-            throw new ArgumentException("Phone number is already in use.");
+            throw new ConflictException("Phone number is already in use.");
     }
 
     private async Task EnsureEmailUniqueAsync(string email)
     {
         var exists = await _userManager.FindByEmailAsync(email);
         if (exists != null)
-            throw new ArgumentException("Email is already in use.");
+            throw new ConflictException("Email is already in use.");
     }
 }

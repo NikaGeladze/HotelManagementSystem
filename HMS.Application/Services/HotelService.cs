@@ -97,7 +97,7 @@ public class HotelService : IHotelService
             pageSize: filter.PageSize,
             includes: q => q.Include(h => h.Rooms).Include(h=> h.Managers),
             tracking: false);
-
+        if (hotels.Count == 0) throw new NotFoundException("Hotels not found");
         return _mapper.Map<List<HotelSummaryDto>>(hotels);
     }
 }

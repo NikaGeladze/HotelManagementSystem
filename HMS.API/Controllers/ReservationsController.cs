@@ -21,7 +21,7 @@ public class ReservationsController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetAll([FromQuery] ReservationFilterDto filter)
     {
         if (User.IsInRole("Manager"))
@@ -58,6 +58,7 @@ public class ReservationsController : ControllerBase
     }
 
     [HttpGet("{reservationId:guid}")]
+    [Authorize(Roles = "Admin,Manager")]
     public async Task<IActionResult> GetById(Guid reservationId)
     {
         var reservation = await _reservationService.GetByIdAsync(reservationId);

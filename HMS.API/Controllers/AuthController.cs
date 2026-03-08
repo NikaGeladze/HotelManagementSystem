@@ -4,6 +4,7 @@ using HMS.Application.Models;
 using HMS.Application.Models.DTOs.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace HMS.API.Controllers;
 
@@ -60,6 +61,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
+    [EnableRateLimiting("ApiPolicy")]
     public async Task<IActionResult> Login([FromBody] LoginDto dto)
     {
         var token = await _authService.LoginAsync(dto);

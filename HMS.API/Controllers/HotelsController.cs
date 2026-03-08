@@ -35,7 +35,6 @@ public class HotelsController : ControllerBase
     // ── Hotels ────────────────────────────────────────────────
 
     [HttpGet]
-    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetAll([FromQuery] HotelFilterDto filter)
     {
         var hotels = await _hotelService.GetAllAsync(filter);
@@ -49,7 +48,6 @@ public class HotelsController : ControllerBase
     }
 
     [HttpGet("{hotelId:guid}")]
-    [Authorize(Roles = "Admin,Manager,Guest")]
     public async Task<IActionResult> GetById(Guid hotelId)
     {
         var hotel = await _hotelService.GetByIdAsync(hotelId);
