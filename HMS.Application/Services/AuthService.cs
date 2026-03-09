@@ -18,13 +18,15 @@ public class AuthService : IAuthService
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
     private readonly IHotelRepository _hotelRepository;
     private readonly IReservationService _reservationService;
+    private readonly IEmailService _emailService;
 
     public AuthService(
         UserManager<ApplicationUser> userManager,
         RoleManager<IdentityRole> roleManager,
         IJwtTokenGenerator jwtTokenGenerator,
         IHotelRepository hotelRepository,
-        IReservationService reservationService
+        IReservationService reservationService,
+        IEmailService emailService
         )
     {
         _userManager = userManager;
@@ -32,6 +34,7 @@ public class AuthService : IAuthService
         _jwtTokenGenerator = jwtTokenGenerator;
         _hotelRepository = hotelRepository;
         _reservationService = reservationService;
+        _emailService = emailService;
     }
     
     public async Task<string> RegisterGuestAsync(RegisterGuestDto dto)
@@ -101,6 +104,17 @@ public class AuthService : IAuthService
         await CreateUserAsync(user, dto.Password);
         await _userManager.AddToRoleAsync(user, "Manager");
 
+        await _emailService.SendAsync(
+            user.Email,
+            "Welcome to HMS",
+            $"""
+             <h1>Welcome, {user.FirstName}!</h1>
+             <p>You have been registered as a Manager in the HMS system.</p>
+             <p>You can now login with your email and password.</p>
+             <br/>
+             <p>Email: {user.Email}</p>
+             <p>Password: {dto.Password}</p>
+             """);
         return user.Id;
     }
 
