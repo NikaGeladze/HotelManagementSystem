@@ -34,6 +34,9 @@ public class HotelsController : ControllerBase
 
     // ── Hotels ────────────────────────────────────────────────
 
+    /// <summary>
+    /// ყველა სასტუმროს ნახვა
+    /// </summary>
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] HotelFilterDto filter)
     {
@@ -47,6 +50,9 @@ public class HotelsController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// სასუმტროს დეტალების ნახვა
+    /// </summary>
     [HttpGet("{hotelId:guid}")]
     public async Task<IActionResult> GetById(Guid hotelId)
     {
@@ -60,6 +66,9 @@ public class HotelsController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// სასუმტროს შექმნა
+    /// </summary>
     [HttpPost]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Create([FromBody] CreateHotelDto dto)
@@ -74,6 +83,9 @@ public class HotelsController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// სასუმტროს განახლება
+    /// </summary>
     [HttpPut("{hotelId:guid}")]
     [Authorize(Roles = "Admin,Manager")]
     public async Task<IActionResult> Update(Guid hotelId, [FromBody] UpdateHotelDto dto)
@@ -91,6 +103,9 @@ public class HotelsController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// სასუმტროს წაშლა
+    /// </summary>
     [HttpDelete("{hotelId:guid}")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(Guid hotelId)
@@ -105,6 +120,9 @@ public class HotelsController : ControllerBase
         });
     }
     
+    /// <summary>
+    /// მენეჯერის მიბმა სასტუმროზე
+    /// </summary>
     [HttpPut("{hotelId:guid}/managers/{managerId}/assign")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> AssignManager(Guid hotelId, string managerId)
@@ -121,6 +139,9 @@ public class HotelsController : ControllerBase
 
     // ── Rooms ─────────────────────────────────────────────────
 
+    /// <summary>
+    /// ყველა ოთახის ნახვა
+    /// </summary>
     [HttpGet("{hotelId:guid}/rooms")]
     public async Task<IActionResult> GetRooms(Guid hotelId, [FromQuery] RoomSearchDto filter)
     {
@@ -134,6 +155,9 @@ public class HotelsController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// კონკრეტული ოთახის ნახვა
+    /// </summary>
     [HttpGet("{hotelId:guid}/rooms/{roomId:guid}")]
     public async Task<IActionResult> GetRoom(Guid hotelId, Guid roomId)
     {
@@ -147,6 +171,9 @@ public class HotelsController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// ოთახის შექმნა
+    /// </summary>
     [HttpPost("{hotelId:guid}/rooms")]
     [Authorize(Roles = "Admin,Manager")]
     public async Task<IActionResult> CreateRoom(Guid hotelId, [FromBody] CreateRoomDto dto)
@@ -164,6 +191,9 @@ public class HotelsController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// ოთახის განახლება
+    /// </summary>
     [HttpPut("{hotelId:guid}/rooms/{roomId:guid}")]
     [Authorize(Roles = "Admin,Manager")]
     public async Task<IActionResult> UpdateRoom(Guid hotelId, Guid roomId, [FromBody] UpdateRoomDto dto)
@@ -181,6 +211,9 @@ public class HotelsController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// ოთახის წაშლა
+    /// </summary>
     [HttpDelete("{hotelId:guid}/rooms/{roomId:guid}")]
     [Authorize(Roles = "Admin,Manager")]
     public async Task<IActionResult> DeleteRoom(Guid hotelId, Guid roomId)
@@ -199,7 +232,9 @@ public class HotelsController : ControllerBase
     }
 
     // ── Reservations ──────────────────────────────────────────
-
+    /// <summary>
+    /// რეზერვაციის შექმნა
+    /// </summary>
     [HttpPost("{hotelId:guid}/reservations")]
     [Authorize(Roles = "Guest,Manager,Admin")]
     public async Task<IActionResult> CreateReservation(Guid hotelId, [FromBody] CreateReservationDto dto)

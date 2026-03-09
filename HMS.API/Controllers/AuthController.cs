@@ -19,6 +19,9 @@ public class AuthController : ControllerBase
         _authService = authService;
     }
 
+    /// <summary>
+    /// მომხმარებლის რეგისტრაცია
+    /// </summary>
     [HttpPost("register/guest")]
     public async Task<IActionResult> RegisterGuest([FromBody] RegisterGuestDto dto)
     {
@@ -32,8 +35,11 @@ public class AuthController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// ადმინის რეგისტრაცია
+    /// </summary>
     [HttpPost("register/admin")]
-    //[Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> RegisterAdmin([FromBody] RegisterAdminDto dto)
     {
         var id = await _authService.RegisterAdminAsync(dto);
@@ -46,8 +52,11 @@ public class AuthController : ControllerBase
         });
     }
     
+    /// <summary>
+    /// მენეჯერის რეგისტრაცია
+    /// </summary>
     [HttpPost("register/manager/{hotelId:guid}")]
-    //[Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> RegisterManager(Guid hotelId, [FromBody] RegisterManagerDto dto)
     {
         var id = await _authService.RegisterManagerAsync(hotelId, dto);
@@ -60,6 +69,9 @@ public class AuthController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// შესვლა
+    /// </summary>
     [HttpPost("login")]
     [EnableRateLimiting("ApiPolicy")]
     public async Task<IActionResult> Login([FromBody] LoginDto dto)

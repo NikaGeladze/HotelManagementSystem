@@ -23,6 +23,7 @@ public class HotelService : IHotelService
 
     public async Task<Guid> CreateAsync(CreateHotelDto dto)
     {
+        if (dto.Rating < 1 || dto.Rating > 5) throw new ValidationException(["Rating must be in range 1-5"]);
         var hotel = _mapper.Map<Hotel>(dto);
         await _hotelRepository.AddAsync(hotel);
         await _hotelRepository.SaveAsync();
@@ -31,6 +32,7 @@ public class HotelService : IHotelService
 
     public async Task UpdateAsync(Guid hotelId, UpdateHotelDto dto, string? requesterId = null, bool isAdmin = false)
     {
+        if (dto.Rating < 1 || dto.Rating > 5) throw new ValidationException(["Rating must be in range 1-5"]);
         var hotel = await _hotelRepository.GetAsync(
                         h => h.Id == hotelId,
                         includes: q => q.Include(h => h.Managers)

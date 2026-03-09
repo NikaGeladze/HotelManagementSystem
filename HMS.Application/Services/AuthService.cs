@@ -100,10 +100,6 @@ public class AuthService : IAuthService
             UserName = dto.Email,
             HotelId = hotelId
         };
-
-        await CreateUserAsync(user, dto.Password);
-        await _userManager.AddToRoleAsync(user, "Manager");
-
         await _emailService.SendAsync(
             user.Email,
             "Welcome to HMS",
@@ -115,6 +111,8 @@ public class AuthService : IAuthService
              <p>Email: {user.Email}</p>
              <p>Password: {dto.Password}</p>
              """);
+        await CreateUserAsync(user, dto.Password);
+        await _userManager.AddToRoleAsync(user, "Manager");
         return user.Id;
     }
 

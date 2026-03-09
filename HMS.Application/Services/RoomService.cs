@@ -33,7 +33,7 @@ public class RoomService : IRoomService
         if (!hotelExists)
             throw new NotFoundException($"Hotel with id {hotelId} not found.");
         if (dto.Price <= 0)
-            throw new ArgumentException("Room price is not positive!");
+            throw new ValidationException(["Room price is not positive!"]);
 
         var room = _mapper.Map<Room>(dto);
         room.HotelId = hotelId;
@@ -49,7 +49,7 @@ public class RoomService : IRoomService
         if (!isAdmin)
             await EnsureManagerOwnsHotelAsync(hotelId, requesterId);
         
-        if (dto.Price <= 0) throw new ArgumentException("Price is not positive!");
+        if (dto.Price <= 0) throw new ValidationException(["Room price is not positive!"]);
         var room = await _roomRepository.GetAsync(
             r => r.Id == roomId && r.HotelId == hotelId)
             ?? throw new NotFoundException($"Room with id {roomId} not found in hotel {hotelId}.");
@@ -114,6 +114,7 @@ public class RoomService : IRoomService
                 .Include(r => r.ReservationRooms)
                     .ThenInclude(rr => rr.Reservation),
             tracking: false);
+        if (rooms.Count == 0) throw new NotFoundException("Rooms not found");
 
         return _mapper.Map<List<RoomResponseDto>>(rooms);
     }

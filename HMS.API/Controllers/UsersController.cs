@@ -22,6 +22,9 @@ public class UsersController : ControllerBase
 
     // ── Manager ───────────────────────────────────────────────
 
+    /// <summary>
+    /// მენეჯერის განახლება
+    /// </summary>]
     [HttpPut("managers/{managerId}")]
     [Authorize(Roles = "Admin,Manager")]
     public async Task<IActionResult> UpdateManager(string managerId, [FromBody] UpdateManagerDto dto)
@@ -39,6 +42,9 @@ public class UsersController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// მენეჯერის წაშლა
+    /// </summary>
     [HttpDelete("managers/{managerId}")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteManager(string managerId)
@@ -55,6 +61,9 @@ public class UsersController : ControllerBase
     
 
     //------getusers----
+    /// <summary>
+    /// ყველა მომხმარებლის ნახვა
+    /// </summary>
     [HttpGet]
     [Authorize(Roles = "Admin,Manager")]
     public async Task<IActionResult> GetAllUsers([FromQuery] string? role,[FromQuery] string? fullname)
@@ -77,6 +86,9 @@ public class UsersController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// მომხმარებლის განახლება
+    /// </summary>
     [HttpPut("guests")]
     [HttpPut("guests/{guestId}")]
     [Authorize(Roles = "Admin,Guest")]
@@ -101,6 +113,9 @@ public class UsersController : ControllerBase
         });
     }
     
+    /// <summary>
+    /// მომხმარებლის წაშლა
+    /// </summary>
     [HttpDelete("guests/{guestId}")]
     [Authorize(Roles = "Admin,Guest")]
     public async Task<IActionResult> DeleteGuest(string guestId)

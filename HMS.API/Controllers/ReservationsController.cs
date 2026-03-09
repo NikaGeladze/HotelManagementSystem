@@ -20,8 +20,11 @@ public class ReservationsController : ControllerBase
         _reservationService = reservationService;
     }
 
+    /// <summary>
+    /// ყველა რეზერვაციის ნახვა
+    /// </summary>
     [HttpGet]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Manager")]
     public async Task<IActionResult> GetAll([FromQuery] ReservationFilterDto filter)
     {
         if (User.IsInRole("Manager"))
@@ -41,6 +44,9 @@ public class ReservationsController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// ჩემი რეზერვაციის ნახვა
+    /// </summary>
     [HttpGet("my")]
     [Authorize(Roles = "Guest")]
     public async Task<IActionResult> GetMyReservations([FromQuery] ReservationFilterDto filter)
@@ -57,6 +63,9 @@ public class ReservationsController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// კონკრენტული რეზერვაციის ნახვა
+    /// </summary>
     [HttpGet("{reservationId:guid}")]
     [Authorize(Roles = "Admin,Manager")]
     public async Task<IActionResult> GetById(Guid reservationId)
@@ -71,6 +80,9 @@ public class ReservationsController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// რეზერვაციის განახლება
+    /// </summary>
     [HttpPut("{reservationId:guid}")]
     [Authorize(Roles = "Admin,Guest")]
     public async Task<IActionResult> Update(Guid reservationId, [FromBody] UpdateReservationDto dto)
@@ -88,6 +100,9 @@ public class ReservationsController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// რეზერვაციის წაშლა
+    /// </summary>
     [HttpDelete("{reservationId:guid}")]
     [Authorize(Roles = "Admin,Guest")]
     public async Task<IActionResult> Delete(Guid reservationId)
