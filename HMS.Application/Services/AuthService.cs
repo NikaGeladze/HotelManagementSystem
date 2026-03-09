@@ -7,6 +7,7 @@ using HMS.Domain.Entities;
 using MapsterMapper;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using MimeKit;
 using ValidationException = System.ComponentModel.DataAnnotations.ValidationException;
 
 namespace HMS.Application.Services;
@@ -88,7 +89,8 @@ public class AuthService : IAuthService
         {
             throw new ArgumentException("Personal number must contain only digits.");
         }
-
+        if (!IsValidEmail(dto.Email))
+            throw new Exceptions.ValidationException([$"Invalid email address: {dto.Email}"]);
 
         var user = new ApplicationUser
         {
@@ -134,6 +136,8 @@ public class AuthService : IAuthService
         {
             throw new ArgumentException("Personal number must contain only digits.");
         }
+        if (!IsValidEmail(dto.Email))
+            throw new Exceptions.ValidationException([$"Invalid email address: {dto.Email}"]);
 
         var user = new ApplicationUser
         {
@@ -242,6 +246,8 @@ public class AuthService : IAuthService
         
         if (!isAdmin && managerId != requesterId)
             throw new UnauthorizedException("You can only update your own account.");
+        if (!IsValidEmail(dto.Email))
+            throw new Exceptions.ValidationException([$"Invalid email address: {dto.Email}"]);
 
         manager.FirstName = dto.FirstName ?? manager.FirstName;
         manager.LastName = dto.LastName ?? manager.LastName;
@@ -343,5 +349,18 @@ public class AuthService : IAuthService
         var exists = await _userManager.FindByEmailAsync(email);
         if (exists != null)
             throw new ConflictException("Email is already in use.");
+    }
+    
+    private static bool IsValidEmail(string email)
+    {
+        try
+        {
+            var addr = MailboxAddress.Parse(email);
+            return addr.Address == email;
+        }
+        catch
+        {
+            return false;
+        }
     }
 }
